@@ -263,9 +263,6 @@ The notebook includes visual analysis for both data understanding and model vali
 ```text
 Weather-Aware-Power-Cast/
 │
-├── Data/
-│   └── Power_Demand_2021-2024.csv
-│
 ├── Model/
 │   └── Electricity Demand Forcasting Model.pkl
 │
@@ -273,6 +270,7 @@ Weather-Aware-Power-Cast/
 │   └── Weather Aware Power Cast.ipynb
 │
 ├── Presentation/
+|   └── Weather_Aware_Power_Cast_Dashboard.pptx
 │
 └── README.md
 ```
