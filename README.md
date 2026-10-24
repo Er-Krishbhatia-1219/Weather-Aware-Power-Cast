@@ -1,240 +1,298 @@
 # Weather-Aware Power Forecasting
 
-## Overview
+## Executive Summary
 
-**Weather-Aware Power Forecasting** is a machine learning regression project designed to predict electricity demand using historical power-consumption records, weather conditions, and time-based variables.
+**Weather-Aware Power Forecasting** is a time-aware machine learning project that forecasts electricity demand in megawatts (MW) using historical load, meteorological conditions, calendar variables, and lag-based demand signals.
 
-The project combines **data analytics**, **feature engineering**, and **predictive regression modelling** to understand how electricity demand changes with temperature, humidity, rainfall, wind speed, time, day, month, and seasonal patterns.
+The project transforms high-frequency electricity-demand data into a structured forecasting dataset and evaluates multiple regression models using a strict chronological train-validation-test design. The final linear regression model achieved a **test MAE of 24.59 MW**, **test RMSE of 41.87 MW**, and an **R² score of 0.9991** on 2024 data.
 
-The objective is to support **energy-demand planning**, **load forecasting**, **grid optimization**, and **data-driven operational decision-making**.
-
----
-
-## Business Problem
-
-Electricity demand varies continuously because of changing weather conditions, consumer usage patterns, peak hours, and seasonal effects. Inaccurate demand forecasting can lead to:
-
-- Excess electricity generation and increased operational cost
-- Insufficient supply during peak-demand periods
-- Inefficient energy-resource allocation
-- Grid-management challenges
-- Reduced forecasting reliability
-
-This project addresses these challenges by developing a **weather-aware machine learning model** that estimates future power demand from historical data.
+These results demonstrate strong short-term forecasting performance and establish a data-driven framework for energy planning, peak-load management, and operational optimization.
 
 ---
 
-## Project Objectives
+## Business Context
 
-- Analyse the relationship between weather conditions and electricity consumption.
-- Build a regression model for power-demand prediction.
-- Prepare usable and high-quality data for machine learning.
-- Create time-based and weather-based predictive features.
-- Evaluate model performance using regression metrics.
-- Compare actual power demand with predicted values.
-- Support efficient energy planning through data-driven insights.
+Electricity demand is influenced by weather volatility, seasonal cycles, calendar effects, and recent consumption behaviour. Inaccurate demand forecasts can result in:
+
+- Inefficient power generation and dispatch decisions
+- Higher balancing and operating costs
+- Greater risk during peak-demand periods
+- Suboptimal grid-resource allocation
+- Reduced reliability in demand planning
+
+This project addresses the problem through **supervised regression modelling**, combining weather indicators with temporal and historical-load features to estimate future electricity demand.
 
 ---
 
-## Dataset Description
+## Dataset Profile
 
-The dataset contains historical power-consumption data combined with weather-related information.
+The source dataset contains high-frequency electricity-demand and weather observations from **2021 to 2024**.
 
-| Data Category | Variables |
+| Data Characteristic | Value |
+|---|---:|
+| Initial observations | 393,440 |
+| Model-ready observations | 347,745 |
+| Modelling period | 8 January 2021 to 11 December 2024 |
+| Expected data frequency | 5 minutes |
+| Target variable | `Power_Demand_Mw` |
+| Target unit | MW |
+| Model-ready features | 21 |
+
+The target variable ranges from **1,302.08 MW** to **8,631.53 MW**, with an average demand of **3,960.74 MW**.
+
+---
+
+## Input Features
+
+The forecasting dataset combines weather, time, and historical-demand features.
+
+| Feature Group | Variables |
 |---|---|
-| Time-Based Features | Date, hour, day, weekday, month, weekend, season |
-| Weather Features | Temperature, humidity, rainfall, wind speed, pressure, cloud cover |
-| Energy Features | Historical demand, lag values, rolling averages |
-| Target Variable | Electricity demand, power consumption, or energy load |
+| Weather Variables | Temperature, dew point, relative humidity, wind speed, wind direction, atmospheric pressure |
+| Calendar Variables | Year, month, day, hour, minute, day of week, weekend indicator, Indian public-holiday indicator |
+| Historical Demand Variables | 5-minute lag, 1-hour lag, 1-day lag, 1-week lag, previous-hour rolling mean |
+| Data-Quality Variable | Missing wind-direction indicator |
+
+### Weather Data Coverage
+
+| Variable | Observed Range |
+|---|---|
+| Temperature | 4.0°C to 46.4°C |
+| Dew Point | -8.6°C to 30.3°C |
+| Relative Humidity | 5% to 100% |
+| Wind Speed | 0.0 to 63.0 m/s |
+| Atmospheric Pressure | 989.6 to 1027.0 mbar |
 
 ---
 
-## Data Quality and Usability
+## Data Engineering and Quality Controls
 
-The dataset is prepared for regression modelling using the following data-quality practices:
+The data-preparation workflow includes:
 
-- Removal of duplicate records
-- Missing-value identification and treatment
-- Date and timestamp standardization
-- Numerical data-type validation
-- Outlier detection and analysis
-- Alignment of weather data with power-demand observations
-- Feature scaling where required
-- Separation of training and testing datasets
+1. Renaming raw variables into consistent analytical field names.
+2. Converting timestamps into a datetime index.
+3. Removing irrelevant columns and duplicate analytical fields.
+4. Creating a missingness flag for wind-direction values.
+5. Forward-filling missing wind-direction observations.
+6. Generating calendar features from the timestamp.
+7. Creating weekend and India-specific public-holiday indicators.
+8. Engineering lag and rolling-mean demand features.
+9. Removing records without complete lag history.
+10. Preserving chronological order to prevent future data from entering earlier training periods.
 
-A usable dataset should contain sufficient historical observations, consistent timestamps, valid weather measurements, and a clearly defined electricity-demand target variable.
-
----
-
-## Data Preprocessing
-
-The preprocessing workflow includes:
-
-1. Loading historical power-consumption and weather data.
-2. Inspecting column names, data types, null values, and duplicates.
-3. Converting date columns into datetime format.
-4. Extracting time-based variables such as hour, weekday, month, and season.
-5. Handling missing data using imputation or removal.
-6. Identifying unusual observations through outlier analysis.
-7. Creating predictive features from historical and weather data.
-8. Splitting the dataset into training and testing data.
+The final analytical dataset contains no missing values in the model features.
 
 ---
 
 ## Feature Engineering
 
-Feature engineering improves model performance by transforming raw data into meaningful predictive variables.
+The project uses demand-history features to capture short-term persistence and recurring consumption patterns.
 
-Important engineered features include:
-
-- Hour of the day
-- Day of the week
-- Weekend indicator
-- Month and season
-- Peak-hour indicator
-- Previous power-demand values
-- Lagged energy consumption
-- Rolling average demand
-- Temperature-based consumption patterns
-- Weather interaction variables
-
-These features help the model capture **seasonality**, **demand trends**, **peak-load patterns**, and **weather sensitivity**.
+| Engineered Feature | Forecasting Purpose |
+|---|---|
+| `Demand_Lag_5min` | Captures immediate demand continuity |
+| `Demand_Lag_1hr` | Captures intra-day demand behaviour |
+| `Demand_Lag_1day` | Captures daily seasonality |
+| `Demand_Lag_1week` | Captures weekly consumption cycles |
+| `Demand_mean_last_hour` | Smooths short-term demand variation |
+| `Is_Weekend` | Captures weekend consumption behaviour |
+| `Is_Holiday` | Captures public-holiday effects |
+| `Missing_Wind_Drxn_Deg` | Retains information about weather-data completeness |
 
 ---
 
-## Machine Learning Models
+## Modelling Strategy
 
-The project evaluates regression algorithms that predict continuous electricity-demand values.
+The project uses a time-based split rather than a random split, ensuring that the model is evaluated on future periods.
 
-Potential models include:
+| Dataset Split | Period | Purpose |
+|---|---|---|
+| Training Set | 2021–2022 | Model fitting |
+| Validation Set | 2023 | Model selection and comparison |
+| Test Set | 2024 | Final out-of-sample evaluation |
 
+The preprocessing pipeline applies:
+
+- Median imputation and standardization to numerical features
+- Most-frequent imputation to categorical features
+- One-hot encoding for categorical variables
+- Unknown-category handling for robust prediction
+
+---
+
+## Models Evaluated
+
+The following models were evaluated on the 2023 validation period:
+
+- Persistence baseline using 1-day lag demand
+- Persistence baseline using 5-minute lag demand
 - Linear Regression
-- Ridge Regression
-- Decision Tree Regressor
 - Random Forest Regressor
-- Gradient Boosting Regressor
 - XGBoost Regressor
 
-The final model is selected based on forecasting accuracy, error reduction, and generalization performance.
+---
+
+## Validation Performance
+
+| Model | MAE (MW) | RMSE (MW) | R² Score |
+|---|---:|---:|---:|
+| 1-Day Lag Baseline | 463.38 | 709.50 | 0.6483 |
+| 5-Minute Lag Baseline | 27.34 | 41.25 | 0.9988 |
+| **Linear Regression** | **23.48** | **37.84** | **0.9990** |
+| Random Forest Regressor | 24.61 | 40.64 | 0.9988 |
+| XGBoost Regressor | 26.84 | 58.13 | 0.9976 |
+
+### Validation Insight
+
+**Linear Regression produced the strongest validation performance**, achieving the lowest MAE and RMSE and the highest R² score among the evaluated machine learning models.
+
+Compared with the 5-minute persistence baseline, Linear Regression reduced:
+
+- **MAE by approximately 14.1%**
+- **RMSE by approximately 8.3%**
+
+This indicates that the combined weather, calendar, and historical-demand features add measurable predictive value beyond a simple short-term persistence forecast.
+
+---
+
+## Final Test Performance
+
+The final Linear Regression model was trained using the combined 2021–2023 data and evaluated on the unseen 2024 test period.
+
+| Metric | Result | Interpretation |
+|---|---:|---|
+| **MAE** | **24.59 MW** | Average absolute forecasting error |
+| **RMSE** | **41.87 MW** | Error measure with greater sensitivity to larger deviations |
+| **R² Score** | **0.9991** | Proportion of demand variation explained by the model |
+| 5-Minute Baseline MAE | 29.09 MW | Reference short-term persistence error |
+| 5-Minute Baseline RMSE | 45.42 MW | Reference short-term persistence error |
+
+### Test-Set Interpretation
+
+On unseen 2024 data, the final model:
+
+- Reduced **MAE by approximately 15.5%** compared with the 5-minute baseline.
+- Reduced **RMSE by approximately 7.8%** compared with the 5-minute baseline.
+- Explained approximately **99.91% of the variation** in observed electricity demand.
+
+The model’s strong test performance indicates stable generalization across the final out-of-sample period.
 
 ---
 
 ## Regression Metrics
 
-Regression metrics measure the difference between actual electricity demand and predicted electricity demand.
+### Mean Absolute Error — MAE
 
-### Mean Absolute Error (MAE)
+MAE measures the average absolute difference between actual and predicted electricity demand.
 
-**MAE** measures the average absolute difference between actual and predicted values.
+```text
+MAE = Average of |Actual Demand - Predicted Demand|
+```
 
-MAE = Average of |Actual Value - Predicted Value|
+MAE is expressed in **MW**, making it directly interpretable for energy operations.
 
-A lower MAE indicates better average forecasting accuracy.
+### Root Mean Squared Error — RMSE
 
-### Mean Squared Error (MSE)
+RMSE measures the square root of average squared forecast error.
 
-**MSE** calculates the average squared difference between actual and predicted values.
+```text
+RMSE = √Mean Squared Error
+```
 
-MSE = Average of (Actual Value - Predicted Value)²
+RMSE gives greater weight to large prediction errors, which is useful when substantial load deviations create operational risk.
 
-MSE gives higher importance to larger prediction errors.
+### R-Squared Score — R²
 
-### Root Mean Squared Error (RMSE)
+R² measures the proportion of demand variability explained by the model.
 
-**RMSE** is the square root of Mean Squared Error.
+```text
+R² = 1 - (Residual Sum of Squares / Total Sum of Squares)
+```
 
-RMSE = √MSE
-
-RMSE is useful for power forecasting because it strongly penalizes large demand-prediction errors.
-
-### R-Squared Score (R²)
-
-**R² Score** measures the proportion of electricity-demand variation explained by the regression model.
-
-An R² score closer to **1.0** indicates stronger predictive performance.
-
-### Mean Absolute Percentage Error (MAPE)
-
-**MAPE** measures the average prediction error as a percentage.
-
-MAPE provides a practical and easily understandable measure of forecasting accuracy.
+An R² score close to 1 indicates that the model closely follows observed demand variation.
 
 ---
 
-## Model Evaluation
+## Analytical Visualizations
 
-| Metric | Purpose |
-|---|---|
-| MAE | Measures average absolute prediction error |
-| MSE | Measures squared prediction error |
-| RMSE | Highlights large forecasting errors |
-| R² Score | Measures explained variation in electricity demand |
-| MAPE | Measures average percentage forecasting error |
+The notebook includes visual analysis for both data understanding and model validation:
 
-A strong forecasting model should produce **low MAE**, **low RMSE**, **low MAPE**, and a **high R² score**.
-
----
-
-## Visual Analysis
-
-The project includes visualizations for exploratory analysis and model validation.
-
-- Historical electricity-demand trends
-- Power-consumption distribution
-- Weather-variable distributions
+- Monthly power-demand analysis
+- Yearly power-demand trend analysis
+- Daily electricity-demand time series
+- Demand distribution by month
+- Temperature versus power-demand analysis
+- Dew point versus power-demand analysis
+- Hourly power-demand analysis
+- Wind-direction demand comparison
+- Humidity versus power-demand analysis
 - Correlation heatmap
-- Actual versus predicted power demand
-- Residual-error distribution
-- Feature-importance analysis
-- Seasonal demand trends
-- Peak-load analysis
+- Actual versus predicted demand comparison
+- Forecast-error analysis by hour
+- Daily-average actual versus predicted demand for 2024
 
 ---
 
 ## Project Structure
 
-- `Data/` — Raw and processed datasets
-- `Model/` — Trained machine learning models and evaluation results
-- `Notebook/` — Data analysis and model-development notebooks
-- `Presentation/` — Project presentation materials
+```text
+Weather-Aware-Power-Cast/
+│
+├── Data/
+│   └── Power_Demand_2021-2024.csv
+│
+├── Model/
+│   └── Electricity Demand Forcasting Model.pkl
+│
+├── Notebook/
+│   └── Weather Aware Power Cast.ipynb
+│
+├── Presentation/
+│
+└── README.md
+```
 
 ---
 
-## Technologies Used
+## Technology Stack
 
 - **Python**
-- **Pandas**
-- **NumPy**
-- **Matplotlib**
-- **Seaborn**
-- **Scikit-learn**
-- **Jupyter Notebook**
+- **Pandas** — data manipulation and time-series processing
+- **NumPy** — numerical computation
+- **Matplotlib** — data visualization
+- **Seaborn** — statistical visualization
+- **Scikit-learn** — preprocessing, pipelines, regression, and evaluation
+- **XGBoost** — gradient-boosting regression
+- **Joblib** — model serialization
+- **Holidays** — India public-holiday feature generation
+- **Jupyter Notebook** — exploratory analysis and model development
 
 ---
 
-## Expected Outcome
+## Practical Value
 
-This project provides a regression-based electricity-demand forecasting system that can support:
+This forecasting solution can support:
 
-- **Power-demand prediction**
-- **Peak-load management**
-- **Energy generation planning**
-- **Grid optimization**
-- **Resource allocation**
-- **Operational efficiency**
-- **Sustainable energy management**
+- Electricity-demand planning
+- Short-term load forecasting
+- Peak-demand monitoring
+- Energy procurement decisions
+- Grid balancing
+- Resource optimization
+- Weather-sensitive demand analysis
+- Operational risk reduction
 
 ---
 
 ## Future Enhancements
 
-- Real-time weather-data integration
-- Interactive forecasting dashboard
-- Hyperparameter optimization
-- Deep-learning forecasting models
-- Automated model retraining
-- Real-time prediction deployment
-- Model-drift monitoring
+- Integrate real-time weather data from an API
+- Build an interactive forecasting dashboard
+- Add probabilistic forecasting intervals
+- Perform hyperparameter optimization
+- Evaluate advanced time-series models
+- Deploy the model as a web application
+- Monitor data drift and forecast performance in production
 
 ---
 
