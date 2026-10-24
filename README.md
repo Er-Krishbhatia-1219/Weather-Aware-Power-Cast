@@ -10,6 +10,31 @@ These results demonstrate strong short-term forecasting performance and establis
 
 ---
 
+## Regression Performance
+
+The final **Linear Regression** model was trained on 2021–2023 data and evaluated on unseen 2024 electricity-demand data.
+
+| Regression Metric | Test Result | Business Interpretation |
+|---|---:|---|
+| **Mean Absolute Error (MAE)** | **24.59 MW** | On average, the forecast differs from actual electricity demand by only 24.59 MW. |
+| **Root Mean Squared Error (RMSE)** | **41.87 MW** | Large forecasting deviations remain controlled, supporting stable short-term demand prediction. |
+| **R² Score** | **0.9991** | The model explains approximately **99.91%** of variation in electricity demand. |
+
+### Metric Definitions
+
+- **MAE** measures the average absolute difference between actual and predicted demand. Lower values indicate stronger forecast accuracy.
+- **RMSE** penalizes larger forecast errors more heavily and is useful for detecting operationally significant deviations.
+- **R² Score** measures how much of the variation in electricity demand is explained by the model. A value closer to `1.0` indicates a better fit.
+
+The model outperformed the 5-minute persistence baseline:
+
+| Model | MAE (MW) | RMSE (MW) | R² Score |
+|---|---:|---:|---:|
+| 5-Minute Persistence Baseline | 29.09 | 45.42 | Not calculated in final test |
+| **Final Linear Regression Model** | **24.59** | **41.87** | **0.9991** |
+
+This represents a **15.5% reduction in MAE** and a **7.8% reduction in RMSE** compared with the short-term baseline.
+
 ## Business Context
 
 Electricity demand is influenced by weather volatility, seasonal cycles, calendar effects, and recent consumption behaviour. Inaccurate demand forecasts can result in:
